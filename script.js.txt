@@ -1,0 +1,115 @@
+const stocks = [];
+let portfolio = {};
+let totalAssets = 0;
+
+function generateRandomPrice() {
+    return Math.floor(Math.random() * (99999999 - 10000 + 1)) + 10000;
+}
+
+function createStocks() {
+    const stockNames = ["삼성전자", "LG화학", "네이버", "카카오", "현대차"];
+    stockNames.forEach(name => {
+        stocks.push({
+            name: name,
+            price: generateRandomPrice(),
+            history: []
+        });
+    });
+}
+
+function displayStocks() {
+    const stockList = document.getElementById("stocks");
+    stockList.innerHTML = "";
+    stocks.forEach(stock => {
+        const li = document.createElement("li");
+        li.innerHTML = `${stock.name} - ${stock.price} 원 
+                        <button onclick="buyStock('${stock.name}', ${stock.price})">구매</button>
+                        <button onclick="sellStock('${stock.name}', ${stock.price})">판매</button>`;
+        stockList.appendChild(li);
+    });
+}
+
+function buyStock(stockName, stockPrice) {
+    const quantity = prompt(`몇 주를 구매하시겠습니까? (현재 가격: ${stockPrice} 원)`);
+    if (quantity && !isNaN(quantity)) {
+        quantity = parseInt(quantity);
+        if (quantity > 0) {
+            if (!portfolio[stockName]) {
+                portfolio[stockName] = 0;
+            }
+            portfolio[stockName] += quantity;
+            totalAssets += stockPrice * quantity;
+            updatePortfolio();
+        } else {
+            alert("유효한 수량을 입력하세요.");
+        }
+    }
+}
+
+function sellStock(stockName, stockPrice) {
+    const quantity = prompt(`몇 주를 판매하시겠습니까? (현재 가격: ${stockPrice} 원)`);
+    if (quantity && !isNaN(quantity)) {
+        quantity = parseInt(quantity);
+        if (quantity > 0 && portfolio[stockName] && portfolio[stockName] >= quantity) {
+            portfolio[stockName] -= quantity;
+            totalAssets -= stockPrice * quantity;
+            updatePortfolio();
+        } else {
+            alert("유효한 수량을 입력하세요.");
+        }
+    }
+}
+
+function updatePortfolio() {
+    const portfolioList = document.getElementById("portfolio");
+    portfolioList.innerHTML = "";
+    for (const stock in portfolio) {
+        const li = document.createElement("li");
+        li.innerHTML = `${stock} - ${portfolio[stock]}주`;
+        portfolioList.appendChild(li);
+    }
+    document.getElementById("total-assets").innerText = totalAssets;
+    updateChart();
+}
+
+function updateChart() {
+    const ctx = document.getElementById("stockChart").getContext("2d");
+    const labels = stocks.map(stock => stock.name);
+    const data = stocks.map(stock => stock.price);
+
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '주가',
+                data: data,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        });
+}
+
+// 주식 생성 및 표시
+createStocks();
+displayStocks();
+updateChart();
+
+// 주가 변동 시뮬레이션
+setInterval(() => {
+    stocks.forEach(stock => {
+        stock.price = generateRandomPrice(); // 가격을 랜덤으로 업데이트
+        stock.history.push(stock.price); // 가격 변동 기록
+    });
+    displayStocks();
+    updateChart();
+}, 5000); // 5초마다 가격 업데이트
